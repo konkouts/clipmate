@@ -1,5 +1,4 @@
-﻿using System;
-using ClipMate.Models;
+﻿﻿using System;
 using ClipMate.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -13,19 +12,20 @@ namespace ClipMate
 {
     public partial class MainWindow : Window
     {
-        public ObservableCollection<ClipboardSnippet> Snippets { get; set; } = new();
-
+        private ObservableCollection<ClipboardSnippet> _snippets;
+        
         private ClipboardWatcher _watcher;
         private readonly string _dataFile = "snippets.json";
 
-        public MainWindow()
+        public MainWindow(ObservableCollection<ClipboardSnippet> snippets)
         {
             InitializeComponent();
+            _snippets = snippets;
             DataContext = this;
 
             LoadSnippets();
 
-            _watcher = new ClipboardWatcher(Snippets);
+            _watcher = new ClipboardWatcher(_snippets);
 
             SearchBox.TextChanged += SearchBox_TextChanged;
             

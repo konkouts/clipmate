@@ -1,53 +1,109 @@
-﻿using System.Collections.ObjectModel;
-using System.Linq;
+﻿using System;
+using System.Runtime.InteropServices;
 using System.Windows;
-using ClipMate.Models;
+using System.Windows.Interop;
 
-namespace ClipMate.Services
+namespace ClipMate
 {
-    public class ClipboardWatcher
+    public class ClipboardWatcher : IDisposable
     {
-        private readonly ObservableCollection<ClipboardSnippet> _snippets;
-        private string _lastText = "";
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool AddClipboardFormatListener(IntPtr hwnd);
 
-        public ClipboardWatcher(ObservableCollection<ClipboardSnippet> snippets)
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool RemoveClipboardFormatListener(IntPtr hwnd);
+
+        private const int WM_CLIPBOARDUPDATE = 0x031D;
+
+        private HwndSource _hwndSource;
+        private Window _hiddenWindow;
+        private bool _isListening;
+
+        public event EventHandler<string> ClipboardChanged;
+
+        public void Start()
         {
-            _snippets = snippets;
+            if (_isListening)
+                return;
 
-            var timer = new System.Timers.Timer(500); // check every 0.5s
-            timer.Elapsed += (s, e) =>
+            // Create a hidden window to receive clipboard messages
+            _hiddenWindow = new Window
             {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    try
-                    {
-                        if (Clipboard.ContainsText())
-                        {
-                            var text = Clipboard.GetText();
-                            if (text != _lastText)
-                            {
-                                var existing = _snippets.FirstOrDefault(s => s.Content == text);
-                                if (existing != null)
-                                {
-                                    // Move existing snippet to top
-                                    var index = _snippets.IndexOf(existing);
-                                    _snippets.Move(index, 0);
-                                }
-                                else
-                                {
-                                    // Insert new snippet
-                                    _snippets.Insert(0, new ClipboardSnippet { Content = text });
-                                }
-
-                                _lastText = text;
-                            }
-                        }
-                    }
-                    catch { }
-                });
+                Width = 0,
+                Height = 0,
+                WindowStyle = WindowStyle.None,
+                ShowInTaskbar = false,
+                ShowActivated = false,
+                Visibility = Visibility.Hidden
             };
-            timer.Start();
+
+            _hiddenWindow.Show();
+
+            var helper = new WindowInteropHelper(_hiddenWindow);
+            _hwndSource = HwndSource.FromHwnd(helper.Handle);
+            _hwndSource.AddHook(WndProc);
+
+            AddClipboardFormatListener(helper.Handle);
+            _isListening = true;
         }
 
+        public void Stop()
+        {
+            if (!_isListening)
+                return;
+
+            if (_hwndSource != null)
+            {
+                var helper = new WindowInteropHelper(_hiddenWindow);
+                RemoveClipboardFormatListener(helper.Handle);
+                _hwndSource.RemoveHook(WndProc);
+                _hwndSource.Dispose();
+                _hwndSource = null;
+            }
+
+            if (_hiddenWindow != null)
+            {
+                _hiddenWindow.Close();
+                _hiddenWindow = null;
+            }
+
+            _isListening = false;
+        }
+
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (msg == WM_CLIPBOARDUPDATE)
+            {
+                try
+                {
+                    if (Clipboard.ContainsText())
+                    {
+                        string text = Clipboard.GetText();
+                        
+                        // Ignore empty or very long clipboard content
+                        if (!string.IsNullOrWhiteSpace(text) && text.Length < 10000)
+                        {
+                            ClipboardChanged?.Invoke(this, text);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Clipboard access can fail for various reasons
+                    System.Diagnostics.Debug.WriteLine($"Clipboard access error: {ex.Message}");
+                }
+
+                handled = true;
+            }
+
+            return IntPtr.Zero;
+        }
+
+        public void Dispose()
+        {
+            Stop();
+        }
     }
 }

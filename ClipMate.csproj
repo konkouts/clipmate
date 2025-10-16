@@ -11,6 +11,12 @@
     <ItemGroup>
       <PackageReference Include="MaterialDesignColors" Version="5.3.1-ci1146" />
       <PackageReference Include="MaterialDesignThemes" Version="5.3.1-ci1146" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="System.Windows.Forms" />
+        <Reference Include="System.Drawing" />
     </ItemGroup>
 
 </Project>

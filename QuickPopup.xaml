@@ -1,12 +1,15 @@
-﻿<Window x:Class="ClipMate.QuickPopup"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        WindowStyle="None"
-        AllowsTransparency="True"
-        Background="#EEFFFFFF"
-        Topmost="True"
-        ShowInTaskbar="False"
-        Height="300" Width="400">
+﻿﻿<Window x:Class="ClipMate.QuickPopup"
+         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+         WindowStyle="None"
+         AllowsTransparency="True"
+         Background="#EEFFFFFF"
+         Topmost="True"
+         ShowInTaskbar="False"
+         Height="300" Width="400">
+    <Window.Resources>
+        <local:BoolToIconConverter x:Key="BoolToIconConverter"/>
+    </Window.Resources>
     <DockPanel Margin="10">
         <TextBox x:Name="SearchBox" Height="30" Margin="0,0,0,10" />
         <ListBox x:Name="SnippetList"/>
