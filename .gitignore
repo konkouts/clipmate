@@ -1,0 +1,34 @@
+# Build results
+bin/
+obj/
+*.exe
+*.dll
+*.pdb
+
+# Visual Studio / Rider files
+*.user
+*.suo
+*.vs/
+*.idea/
+*.resharper/
+
+# NuGet packages
+*.nupkg
+packages/
+*.snupkg
+
+# Rider caches
+.idea/
+*.iml
+
+# Windows thumbnail/cache files
+Thumbs.db
+Desktop.ini
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# OS generated files
+.DS_Store
+*.log
